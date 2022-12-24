@@ -463,7 +463,7 @@
       </svg>
 
 
-      <audio controls hidden="true" autoplay="autoplay" loop="loop">
+      <audio controls hidden="true" autoplay="autoplay" loop="loop" id="audio1">
         <source src="music/sdg.mp3">
       </audio>
 
@@ -541,6 +541,14 @@
 
   <script src="http://code.jquery.com/jquery-latest.js"></script>
   <script type="text/javascript">
+	  
+	  document.addEventListener('click', function() {
+    document.getElementById('audio1').play()
+})
+document.addEventListener('touchstart', function() {
+    document.getElementById('audio1').play()
+})
+	  
     /* 控制下雪 */
     function snowFall(snow) {
         /* 可配置属性 */
