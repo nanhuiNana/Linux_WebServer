@@ -15,19 +15,19 @@ private:
 public:
     Sem() {
         if (sem_init(&mySem, 0, 1) == -1) {
-            perror("sem_init error");
+            perror("sem init error");
             exit(-1);
         }
     }
     Sem(int num) {
         if (sem_init(&mySem, 0, num) == -1) {
-            perror("sem_init_int error");
+            perror("sem init_int error");
             exit(-1);
         }
     }
     ~Sem() {
         if (sem_destroy(&mySem) == -1) {
-            perror("sem_destroy error");
+            perror("sem destroy error");
             exit(-1);
         }
     }
@@ -47,7 +47,7 @@ private:
 public:
     Mutex() {
         if (pthread_mutex_init(&myMutex, NULL) != 0) {
-            perror("mutex_init error");
+            perror("mutex init error");
             exit(-1);
         }
     }
@@ -62,6 +62,39 @@ public:
     }
     bool unlock() {
         return pthread_mutex_unlock(&myMutex) == 0;
+    }
+    pthread_mutex_t *getMyMutex() {
+        return &myMutex;
+    }
+};
+
+/*封装条件变量*/
+class Cond {
+private:
+    pthread_cond_t myCond;
+
+public:
+    Cond() {
+        if (pthread_cond_init(&myCond, NULL) != 0) {
+            perror("cond init error");
+        }
+    }
+    ~Cond() {
+        if (pthread_cond_destroy(&myCond) != 0) {
+            perror("cond destroy error");
+        }
+    }
+    bool wait(pthread_mutex_t *myMutex) {
+        return pthread_cond_wait(&myCond, myMutex) == 0;
+    }
+    bool timewait(pthread_mutex_t *myMutex, struct timespec time) {
+        return pthread_cond_timedwait(&myCond, myMutex, &time) == 0;
+    }
+    bool signal() {
+        return pthread_cond_signal(&myCond) == 0;
+    }
+    bool broadcast() {
+        return pthread_cond_broadcast(&myCond) == 0;
     }
 };
 
