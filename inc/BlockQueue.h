@@ -144,6 +144,11 @@ public:
                 myMutex.unlock();
                 return false;
             }
+            // 额外进行判断一次，如果不满足条件直接返回失败
+            if (myQueue.size() <= 0) {
+                myMutex.unlock();
+                return false;
+            }
         }
         value = myQueue.front();
         myQueue.pop();
