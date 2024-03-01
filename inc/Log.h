@@ -1,26 +1,61 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <string>
+
+#include "BlockQueue.h"
+#include "Locker.h"
+using std::string;
+
+// Log分级对外宏定义
+#define LOG_DEBUG(format, ...) Log::get_instance()->writeLog(0, format, ##__VA_ARGS__)
+#define LOG_INFO(format, ...) Log::get_instance()->writeLog(1, format, ##__VA_ARGS__)
+#define LOG_WARN(format, ...) Log::get_instance()->writeLog(2, format, ##__VA_ARGS__)
+#define LOG_ERROR(format, ...) Log::get_instance()->writeLog(3, format, ##__VA_ARGS__)
 
 class Log {
 private:
     // 私有化构造函数，确保外界无法创建新实例
     Log();
+
     ~Log();
 
+    // 异步写入日志函数
+    void asyncWriteLog();
+
 private:
-    FILE* myLogFilePointer;  // 打开日志文件的指针
-    long long myLogCount;    // 记录日志行数
-    bool myIsAsync;          // 异步开关
+    char myDirName[128];             // 路径名
+    char myLogName[128];             // 日志文件名
+    FILE* myLogFilePointer;          // 打开日志文件的指针
+    long long myLogCount;            // 记录日志行数
+    int myLogMaxLines;               // 日志最大行数
+    int myToday;                     // 记录当前时间是哪一天
+    char* myLogBuf;                  // 日志缓冲区
+    int myLogBufSize;                // 日志缓冲区大小
+    bool myIsAsync;                  // 异步开关
+    BlockQueue<string>* myLogQueue;  // 日志队列
+    Mutex myMutex;                   // 互斥锁
 
 public:
     // 创建一个公有静态方法获得实例，使用指针进行返回，避免不必要的拷贝构造
-    static Log* get_instance() {
-        // 懒汉模式，在调用时进行初始化，C++11后无需加锁，编译器会保证局部静态变量的线程安全
-        static Log instance;
-        return &instance;
-    }
+    static Log* get_instance();
+
+    // 初始化日志文件名、日志缓冲区大小、日志最大行数、日志队列最大长度
+    bool init(const char* fileName, int logBufSize = 8192, int logMaxLines = 5000000, int queueMaxSize = 0);
+
+    // 日志写入线程回调函数
+    static void* logWritePthreadCallback(void* args);
+
+    // 写入日志主函数
+    void writeLog(int level, const char* format, ...);
+
+    // 强制刷新写入流缓冲区
+    void flush();
 };
 
 #endif
