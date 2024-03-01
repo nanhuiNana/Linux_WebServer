@@ -13,10 +13,10 @@
 using std::string;
 
 // Log分级对外宏定义
-#define LOG_DEBUG(format, ...) Log::get_instance()->writeLog(0, format, ##__VA_ARGS__)
-#define LOG_INFO(format, ...) Log::get_instance()->writeLog(1, format, ##__VA_ARGS__)
-#define LOG_WARN(format, ...) Log::get_instance()->writeLog(2, format, ##__VA_ARGS__)
-#define LOG_ERROR(format, ...) Log::get_instance()->writeLog(3, format, ##__VA_ARGS__)
+#define LOG_DEBUG(format, ...) Log::getInstance()->writeLog(0, format, ##__VA_ARGS__)
+#define LOG_INFO(format, ...) Log::getInstance()->writeLog(1, format, ##__VA_ARGS__)
+#define LOG_WARN(format, ...) Log::getInstance()->writeLog(2, format, ##__VA_ARGS__)
+#define LOG_ERROR(format, ...) Log::getInstance()->writeLog(3, format, ##__VA_ARGS__)
 
 class Log {
 private:
@@ -43,7 +43,7 @@ private:
 
 public:
     // 创建一个公有静态方法获得实例，使用指针进行返回，避免不必要的拷贝构造
-    static Log* get_instance();
+    static Log* getInstance();
 
     // 初始化日志文件名、日志缓冲区大小、日志最大行数、日志队列最大长度
     bool init(const char* fileName, int logBufSize = 8192, int logMaxLines = 5000000, int queueMaxSize = 0);
@@ -51,11 +51,8 @@ public:
     // 日志写入线程回调函数
     static void* logWritePthreadCallback(void* args);
 
-    // 写入日志主函数
+    // 日志写入主函数
     void writeLog(int level, const char* format, ...);
-
-    // 强制刷新写入流缓冲区
-    void flush();
 };
 
 #endif

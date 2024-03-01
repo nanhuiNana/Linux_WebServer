@@ -11,7 +11,7 @@ Log::~Log() {
     }
 }
 
-Log* Log::get_instance() {
+Log* Log::getInstance() {
     // 懒汉模式，在调用时进行初始化，C++11后无需加锁，编译器会保证局部静态变量的线程安全
     static Log instance;
     return &instance;
