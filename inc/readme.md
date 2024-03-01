@@ -13,3 +13,37 @@
 ## BlockQueue.h
 ### 封装阻塞队列
 * 在异步日志中，每个工作线程当有日志需要处理时，将所需写的日志内容封装后加入到阻塞队列中，而日志系统会单独分配一个写线程，不断地从阻塞队列中获得任务并写入日志文件中。
+
+## Log.h
+### 使用懒汉单例模式封装日志写入
+#### 单例模式
+* 单例模式保证了一个类只有一个实例，并提供一个访问它的全局访问点，该实例被所有程序模块共享。
+* 单例模式也分为两种，一种是懒汉模式：顾名思义，懒汉模式非常懒，当没有人用它的时候它就不初始化，只有被第一次使用时才去初始化；另一种是饿汉模式：与懒汉模式相反，程序运行时就立刻创建实例进行初始化。
+* 经典的懒汉模式一般要使用双检测锁。但C++11之后，可以使用静态局部变量初始化，就不再需要锁，编译器会负责线程安全的问题。
+* 懒汉单例模式——双检测锁
+  ~~~cpp
+    #include<iostream>
+    #include<mutex>
+    using namespace std;
+    /*单例模式：构造函数私有化，对外提供一个接口*/ 
+    //线程安全的单例模式
+    class lhsingleClass {
+    public:
+	    static lhsingleClass* getinstance(){//双重锁模式
+		    if (instance == nullptr){//先判断是否为空，如果为空则进入，不为空说明已经存在实例，直接返回
+			i_mutex.lock();//进入后加锁
+			if (instance == nullptr){//再判断一次，确保不会因为加锁期间多个线程同时进入
+				instance = new lhsingleClass();
+			}
+			i_mutex.unlock();//解锁
+		}
+		return instance;
+	    }
+    private:
+        static lhsingleClass* instance;
+	    static mutex i_mutex;//锁
+	    lhsingleClass(){}
+    };
+    lhsingleClass* lhsingleClass::instance=nullptr;
+    mutex lhsingleClass::i_mutex;//类外初始化
+  ~~~
