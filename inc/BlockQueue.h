@@ -23,9 +23,8 @@ private:
     Cond myCond;       // 条件变量
 
 public:
-    // 构造方法中初始化各个成员变量
-    BlockQueue(int num = 1000)
-        : maxSize(num), myQueue(queue<T>()), myMutex(Mutex()), myCond(Cond()) {
+    // 构造方法中初始化成员变量
+    BlockQueue(int num = 1000) : maxSize(num) {
         if (maxSize <= 0) {
             exit(-1);
         }
@@ -131,7 +130,7 @@ public:
         return true;
     }
 
-    // 入队操作，给工作线程添加超时时长
+    // 出队操作，给工作线程添加超时时长
     bool pop(T& value, int timeoutMS) {
         struct timespec timeout = {0, 0};
         struct timeval now = {0, 0};
