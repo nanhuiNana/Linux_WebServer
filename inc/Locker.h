@@ -1,11 +1,7 @@
 #ifndef __LOCKER_H__
 #define __LOCKER_H__
 
-#include <errno.h>
-#include <pthread.h>
-#include <semaphore.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "wrap.h"
 
 /*·â×°ÐÅºÅÁ¿*/
 class Sem {
@@ -14,28 +10,19 @@ private:
 
 public:
     Sem() {
-        if (sem_init(&mySem, 0, 1) == -1) {
-            perror("sem init error");
-            exit(-1);
-        }
+        Sem_init(&mySem, 0, 1);
     }
     Sem(int num) {
-        if (sem_init(&mySem, 0, num) == -1) {
-            perror("sem init_int error");
-            exit(-1);
-        }
+        Sem_init(&mySem, 0, num);
     }
     ~Sem() {
-        if (sem_destroy(&mySem) == -1) {
-            perror("sem destroy error");
-            exit(-1);
-        }
+        Sem_destroy(&mySem);
     }
     bool wait() {
-        return sem_wait(&mySem) == 0;
+        return Sem_wait(&mySem);
     }
     bool post() {
-        return sem_post(&mySem) == 0;
+        return Sem_post(&mySem);
     }
 };
 
@@ -46,22 +33,16 @@ private:
 
 public:
     Mutex() {
-        if (pthread_mutex_init(&myMutex, NULL) != 0) {
-            perror("mutex init error");
-            exit(-1);
-        }
+        Pthread_mutex_init(&myMutex, NULL);
     }
     ~Mutex() {
-        if (pthread_mutex_destroy(&myMutex) != 0) {
-            perror("mutex destroy error");
-            exit(-1);
-        }
+        Pthread_mutex_destroy(&myMutex);
     }
     bool lock() {
-        return pthread_mutex_lock(&myMutex) == 0;
+        return Pthread_mutex_lock(&myMutex);
     }
     bool unlock() {
-        return pthread_mutex_unlock(&myMutex) == 0;
+        return Pthread_mutex_unlock(&myMutex);
     }
     pthread_mutex_t *getMyMutex() {
         return &myMutex;
@@ -75,26 +56,22 @@ private:
 
 public:
     Cond() {
-        if (pthread_cond_init(&myCond, NULL) != 0) {
-            perror("cond init error");
-        }
+        Pthread_cond_init(&myCond, NULL);
     }
     ~Cond() {
-        if (pthread_cond_destroy(&myCond) != 0) {
-            perror("cond destroy error");
-        }
+        Pthread_cond_destroy(&myCond);
     }
     bool wait(pthread_mutex_t *myMutex) {
-        return pthread_cond_wait(&myCond, myMutex) == 0;
+        return Pthread_cond_wait(&myCond, myMutex);
     }
     bool timewait(pthread_mutex_t *myMutex, struct timespec time) {
-        return pthread_cond_timedwait(&myCond, myMutex, &time) == 0;
+        return Pthread_cond_timedwait(&myCond, myMutex, &time);
     }
     bool signal() {
-        return pthread_cond_signal(&myCond) == 0;
+        return Pthread_cond_signal(&myCond);
     }
     bool broadcast() {
-        return pthread_cond_broadcast(&myCond) == 0;
+        return Pthread_cond_broadcast(&myCond);
     }
 };
 
