@@ -33,3 +33,26 @@
   ~~~
 * 异步写入
   * 创建一个写线程和一个阻塞队列，写入主函数通过判断异步开关来获取是否异步，如果是异步就往阻塞队列中添加待写入的日志，阻塞在队列上的写线程获取任务进行写入，典型的生产者消费者模型
+
+## SqlConnectionPool.cpp
+* 懒汉单例模式
+  ~~~c
+    SqlConnectionPool *SqlConnectionPool::getInstance() {
+        static SqlConnectionPool sqlConnectionPool; // 局部静态变量
+        return &sqlConnectionPool;
+    }
+  ~~~
+* RAII机制，专门创建一个类对数据库连接池这个资源类进行封装，构造函数中获取连接池中的连接，析构函数中释放连接归还给连接池
+  ~~~c
+    SqlConnectionPoolRAII::SqlConnectionPoolRAII(MYSQL **connection, SqlConnectionPool *sqlConnectionPool) {
+        *connection = sqlConnectionPool->getConnection(); // 获取连接
+        // cout << "get success" << endl;
+        //  对成员赋值
+        this->connection = *connection;
+        this->sqlConnectionPool = sqlConnectionPool;
+    }
+    SqlConnectionPoolRAII::~SqlConnectionPoolRAII() {
+        // cout << "release success" << endl;
+        sqlConnectionPool->releaseConnection(connection); // 释放连接
+    }
+  ~~~
