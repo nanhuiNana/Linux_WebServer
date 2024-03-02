@@ -43,16 +43,16 @@ bool Log::init(const char* fileName, int logBufSize, int logMaxLines, int queueM
 
     // 在fileName里查找最后一个'/'的位置
     const char* p = strrchr(fileName, '/');
-    char logFileNameBuf[256] = {0};
+    char logFileNameBuf[512] = {0};
 
     // 日志文件命名规则，年_月_日_文件名
     if (p == nullptr) {
-        snprintf(logFileNameBuf, 255, "%d_%02d_%02d_%s", myTm.tm_year + 1900, myTm.tm_mon + 1, myTm.tm_mday, fileName);
+        snprintf(logFileNameBuf, 511, "%d_%02d_%02d_%s", myTm.tm_year + 1900, myTm.tm_mon + 1, myTm.tm_mday, fileName);
     } else {
         // 拆分路径和文件名
         strcpy(myLogName, p + 1);
         strncpy(myDirName, fileName, p - fileName + 1);
-        snprintf(logFileNameBuf, 255, "%s%d_%02d_%02d_%s", myDirName, myTm.tm_year + 1900, myTm.tm_mon + 1, myTm.tm_mday, myLogName);
+        snprintf(logFileNameBuf, 511, "%s%d_%02d_%02d_%s", myDirName, myTm.tm_year + 1900, myTm.tm_mon + 1, myTm.tm_mday, myLogName);
     }
 
     // 记录当前时间是哪一天
@@ -99,15 +99,15 @@ void Log::writeLog(int level, const char* format, ...) {
     myLogCount++;  // 更新日志行数
     // 判断是否是新的一天或者当前日志文件已经写满
     if (myToday != myTm.tm_mday || myLogCount % myLogMaxLines == 0) {
-        char newLogFileNameBuf[256] = {0};  // 新日志文件名缓冲区
+        char newLogFileNameBuf[512] = {0};  // 新日志文件名缓冲区
         fflush(myLogFilePointer);           // 刷新写入缓冲区
         fclose(myLogFilePointer);           // 关闭旧的日志文件
         if (myToday != myTm.tm_mday) {
-            snprintf(newLogFileNameBuf, 255, "%s%d_%02d_%02d_%s", myDirName, myTm.tm_year + 1900, myTm.tm_mon + 1, myTm.tm_mday, myLogName);
+            snprintf(newLogFileNameBuf, 511, "%s%d_%02d_%02d_%s", myDirName, myTm.tm_year + 1900, myTm.tm_mon + 1, myTm.tm_mday, myLogName);
             myToday = myTm.tm_mday;
             myLogCount = 0;
         } else {
-            snprintf(newLogFileNameBuf, 255, "%s%d_%02d_%02d_%s.%lld", myDirName, myTm.tm_year + 1900, myTm.tm_mon + 1, myTm.tm_mday, myLogName, myLogCount / myLogMaxLines);
+            snprintf(newLogFileNameBuf, 511, "%s%d_%02d_%02d_%s.%lld", myDirName, myTm.tm_year + 1900, myTm.tm_mon + 1, myTm.tm_mday, myLogName, myLogCount / myLogMaxLines);
         }
         myLogFilePointer = fopen(newLogFileNameBuf, "a");
     }
@@ -122,7 +122,7 @@ void Log::writeLog(int level, const char* format, ...) {
     myMutex.lock();
     // 每一行的开头格式
     int n = snprintf(myLogBuf, 48, "%d-%02d-%02d %02d:%02d:%02d.%06ld %s ", myTm.tm_year + 1900, myTm.tm_mon + 1, myTm.tm_mday, myTm.tm_hour, myTm.tm_min, myTm.tm_sec, now.tv_usec, s);
-    // 每一行的日志内容
+    // 每一行的日志内容,format为写入日志的内容的格式，valist为需要写入的内容（可变参数）
     int m = vsnprintf(myLogBuf + n, myLogBufSize - n - 1, format, valist);
     // 加入换行和结束符
     myLogBuf[n + m] = '\n';
@@ -142,7 +142,10 @@ void Log::writeLog(int level, const char* format, ...) {
     va_end(valist);
 }
 
-void* Log::logWritePthreadCallback(void* args) { Log::get_instance()->asyncWriteLog(); }
+void* Log::logWritePthreadCallback(void* args) {
+    Log::getInstance()->asyncWriteLog();  // 调用异步写入函数
+    return nullptr;
+}
 
 void Log::asyncWriteLog() {
     string logWords;
