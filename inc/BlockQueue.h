@@ -40,7 +40,7 @@ public:
     // 判断队列是否为满
     bool full() {
         myMutex.lock();
-        if (myQueue.size() >= maxSize) {
+        if ((int)myQueue.size() >= maxSize) {
             myMutex.unlock();
             return true;
         } else {
@@ -104,7 +104,7 @@ public:
     // 入队操作，生产者生产产品放入任务队列中
     bool push(const T& value) {
         myMutex.lock();
-        if (myQueue.size() >= maxSize) {
+        if ((int)myQueue.size() >= maxSize) {
             myCond.broadcast();
             myMutex.unlock();
             return false;
