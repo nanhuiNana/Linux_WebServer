@@ -1,6 +1,5 @@
 #include "../inc/wrap.h"
 
-// 封装系统异常函数
 void sys_error(const char *str) {
     perror("str");
     exit(-1);
@@ -74,9 +73,23 @@ bool Pthread_cond_broadcast(pthread_cond_t *cond) {
     return pthread_cond_broadcast(cond) == 0;
 }
 
-// MYSQL *Mysql_init(MYSQL *mysql) {
-//     mysql = mysql_init(mysql);
-//     if (mysql == NULL) {
-//     }
-//     return mysql;
-// }
+void Mysql_error(MYSQL *mysql) {
+    cout << "MYSQL ERROR: " << mysql_error(mysql) << endl;
+    exit(-2);
+}
+
+MYSQL *Mysql_init(MYSQL *mysql) {
+    mysql = mysql_init(mysql);
+    if (mysql == NULL) {
+        Mysql_error(mysql);
+    }
+    return mysql;
+}
+
+MYSQL *Mysql_real_connect(MYSQL *mysql, const char *host, const char *user, const char *passwd, const char *db, unsigned int port, const char *unix_socket, unsigned long clientflag) {
+    mysql = mysql_real_connect(mysql, host, user, passwd, db, port, unix_socket, clientflag);
+    if (mysql == NULL) {
+        Mysql_error(mysql);
+    }
+    return mysql;
+}

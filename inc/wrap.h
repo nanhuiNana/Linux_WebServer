@@ -21,6 +21,8 @@ using std::list;
 using std::queue;
 using std::string;
 
+// 封装系统异常函数
+void sys_error(const char *str);
 // 信号量初始化
 extern void Sem_init(sem_t *sem, int pshared, unsigned int value);
 // 信号量销毁
@@ -49,7 +51,11 @@ extern bool Pthread_cond_timedwait(pthread_cond_t *__restrict__ cond, pthread_mu
 extern bool Pthread_cond_signal(pthread_cond_t *cond);
 // 线程条件变量唤醒，唤醒全部阻塞线程
 extern bool Pthread_cond_broadcast(pthread_cond_t *cond);
+// 数据库异常处理函数
+extern void Mysql_error(MYSQL *mysql);
 // 初始化连接句柄
-// extern MYSQL *Mysql_init(MYSQL *mysql);
+extern MYSQL *Mysql_init(MYSQL *mysql);
+// 建立连接
+extern MYSQL *Mysql_real_connect(MYSQL *mysql, const char *host, const char *user, const char *passwd, const char *db, unsigned int port, const char *unix_socket, unsigned long clientflag);
 
 #endif
