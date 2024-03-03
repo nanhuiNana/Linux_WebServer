@@ -17,12 +17,14 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <exception>
 #include <iostream>
 #include <list>
 #include <queue>
 #include <string>
 using std::cout;
 using std::endl;
+using std::exception;
 using std::list;
 using std::queue;
 using std::string;
@@ -63,5 +65,7 @@ extern void Mysql_error(MYSQL *mysql);
 extern MYSQL *Mysql_init(MYSQL *mysql);
 // 建立连接
 extern MYSQL *Mysql_real_connect(MYSQL *mysql, const char *host, const char *user, const char *passwd, const char *db, unsigned int port, const char *unix_socket, unsigned long clientflag);
+// 创建线程
+extern bool Pthread_create(pthread_t *__restrict__ newthread, const pthread_attr_t *__restrict__ attr, void *(*start_routine)(void *), void *__restrict__ arg);
 
 #endif

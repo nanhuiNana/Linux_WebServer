@@ -93,3 +93,7 @@ MYSQL *Mysql_real_connect(MYSQL *mysql, const char *host, const char *user, cons
     }
     return mysql;
 }
+
+bool Pthread_create(pthread_t *__restrict__ newthread, const pthread_attr_t *__restrict__ attr, void *(*start_routine)(void *), void *__restrict__ arg) {
+    return pthread_create(newthread, attr, start_routine, arg) == 0;
+}
