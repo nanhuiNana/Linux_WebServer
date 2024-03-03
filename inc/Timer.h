@@ -2,6 +2,7 @@
 #define __TIMER_H__
 
 #include "Log.h"
+#include "Uilts.h"
 #include "wrap.h"
 
 class Timer;
@@ -9,7 +10,7 @@ class Timer;
 // 连接资源定义
 struct ClientData {
     struct sockaddr_in clientAddr; // 客户端地址
-    int socketFd;                  // 通信套接字
+    int socketfd;                  // 通信套接字
     Timer *timer;                  // 定时器
 };
 
@@ -23,6 +24,15 @@ public:
     Timer *next;                     // 后置指针
     Timer() : prev(NULL), next(NULL) {}
 };
+
+// 回调函数
+void *callbackFun(ClientData *userData) {
+    epoll_ctl(Utils::utilsEpollfd, EPOLL_CTL_DEL, userData->socketfd, 0);
+    assert(userData);
+    close(userData->socketfd);
+    LOG_INFO("close fd %d", userData->socketfd);
+    Log::getInstance()->flush();
+}
 
 // 定时器升序链表定义（定时器容器）
 class TimerSortList {
@@ -146,6 +156,11 @@ public:
             delete temp;
             temp = head;
         }
+    }
+    // 定时处理函数，内部重置定时时间
+    void timerHandler() {
+        tick();
+        alarm(TIMESLOT);
     }
 };
 
