@@ -1,14 +1,20 @@
 #ifndef __WRAP_H__
 #define __WRAP_H__
 
+#include <arpa/inet.h>
+#include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <mysql/mysql.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/epoll.h>
 #include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <iostream>
