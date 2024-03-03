@@ -46,6 +46,9 @@ public:
 
     // 日志写入主函数
     void writeLog(int level, const char *format, ...);
+
+    // 刷新缓冲区函数
+    void flush();
 };
 
 #endif

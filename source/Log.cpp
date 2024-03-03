@@ -11,13 +11,13 @@ Log::~Log() {
     }
 }
 
-Log* Log::getInstance() {
+Log *Log::getInstance() {
     // 懒汉模式，在调用时进行初始化，C++11后无需加锁，编译器会保证局部静态变量的线程安全
     static Log instance;
     return &instance;
 }
 
-bool Log::init(const char* fileName, int logBufSize, int logMaxLines, int queueMaxSize) {
+bool Log::init(const char *fileName, int logBufSize, int logMaxLines, int queueMaxSize) {
     if (queueMaxSize >= 1) {
         // 如果日志队列最大长度大于0，开启异步模式
         myIsAsync = true;
@@ -38,11 +38,11 @@ bool Log::init(const char* fileName, int logBufSize, int logMaxLines, int queueM
 
     // 获取当前时间
     time_t t = time(NULL);
-    struct tm* sysTm = localtime(&t);
+    struct tm *sysTm = localtime(&t);
     struct tm myTm = *sysTm;
 
     // 在fileName里查找最后一个'/'的位置
-    const char* p = strrchr(fileName, '/');
+    const char *p = strrchr(fileName, '/');
     char logFileNameBuf[512] = {0};
 
     // 日志文件命名规则，年_月_日_文件名
@@ -66,12 +66,12 @@ bool Log::init(const char* fileName, int logBufSize, int logMaxLines, int queueM
     return true;
 }
 
-void Log::writeLog(int level, const char* format, ...) {
+void Log::writeLog(int level, const char *format, ...) {
     // 获取当前时间
     struct timeval now = {0, 0};
     gettimeofday(&now, NULL);
     time_t t = now.tv_sec;
-    struct tm* sysTm = localtime(&t);
+    struct tm *sysTm = localtime(&t);
     struct tm myTm = *sysTm;
 
     // Log分级
@@ -96,12 +96,12 @@ void Log::writeLog(int level, const char* format, ...) {
 
     // 判断是否需要创建新的日志文件
     myMutex.lock();
-    myLogCount++;  // 更新日志行数
+    myLogCount++; // 更新日志行数
     // 判断是否是新的一天或者当前日志文件已经写满
     if (myToday != myTm.tm_mday || myLogCount % myLogMaxLines == 0) {
-        char newLogFileNameBuf[512] = {0};  // 新日志文件名缓冲区
-        fflush(myLogFilePointer);           // 刷新写入缓冲区
-        fclose(myLogFilePointer);           // 关闭旧的日志文件
+        char newLogFileNameBuf[512] = {0}; // 新日志文件名缓冲区
+        fflush(myLogFilePointer);          // 刷新写入缓冲区
+        fclose(myLogFilePointer);          // 关闭旧的日志文件
         if (myToday != myTm.tm_mday) {
             snprintf(newLogFileNameBuf, 511, "%s%d_%02d_%02d_%s", myDirName, myTm.tm_year + 1900, myTm.tm_mon + 1, myTm.tm_mday, myLogName);
             myToday = myTm.tm_mday;
@@ -142,8 +142,8 @@ void Log::writeLog(int level, const char* format, ...) {
     va_end(valist);
 }
 
-void* Log::logWritePthreadCallback(void* args) {
-    Log::getInstance()->asyncWriteLog();  // 调用异步写入函数
+void *Log::logWritePthreadCallback(void *args) {
+    Log::getInstance()->asyncWriteLog(); // 调用异步写入函数
     return nullptr;
 }
 
@@ -155,4 +155,11 @@ void Log::asyncWriteLog() {
         fputs(logWords.c_str(), myLogFilePointer);
         myMutex.unlock();
     }
+}
+
+void Log::flush() {
+    myMutex.lock();
+    // 强制刷新写入流缓冲区，将数据立即写入文件指针指向文件
+    fflush(myLogFilePointer);
+    myMutex.unlock();
 }
