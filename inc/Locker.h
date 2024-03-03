@@ -10,7 +10,7 @@ private:
 
 public:
     Sem() {
-        Sem_init(&mySem, 0, 1);
+        Sem_init(&mySem, 0, 0);
     }
     Sem(int num) {
         Sem_init(&mySem, 0, num);
