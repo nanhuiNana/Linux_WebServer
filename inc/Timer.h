@@ -2,9 +2,7 @@
 #define __TIMER_H__
 
 #include "Log.h"
-#include "Uilts.h"
 #include "wrap.h"
-
 class Timer;
 
 // 连接资源定义
@@ -17,22 +15,13 @@ struct ClientData {
 // 定时器类定义
 class Timer {
 public:
-    time_t overtime;                 // 超时时间
-    ClientData *userData;            // 连接资源
-    void *callbackFun(ClientData *); // 回调函数
-    Timer *prev;                     // 前置指针
-    Timer *next;                     // 后置指针
+    time_t overtime;                   // 超时时间
+    ClientData *userData;              // 连接资源
+    void (*callbackFun)(ClientData *); // 回调函数
+    Timer *prev;                       // 前置指针
+    Timer *next;                       // 后置指针
     Timer() : prev(NULL), next(NULL) {}
 };
-
-// 回调函数
-void *callbackFun(ClientData *userData) {
-    epoll_ctl(Utils::utilsEpollfd, EPOLL_CTL_DEL, userData->socketfd, 0);
-    assert(userData);
-    close(userData->socketfd);
-    LOG_INFO("close fd %d", userData->socketfd);
-    Log::getInstance()->flush();
-}
 
 // 定时器升序链表定义（定时器容器）
 class TimerSortList {
@@ -156,11 +145,6 @@ public:
             delete temp;
             temp = head;
         }
-    }
-    // 定时处理函数，内部重置定时时间
-    void timerHandler() {
-        tick();
-        alarm(TIMESLOT);
     }
 };
 

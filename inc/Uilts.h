@@ -1,58 +1,51 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
+#include "HttpConnection.h"
+#include "Locker.h"
+#include "Log.h"
+#include "PthreadPool.h"
+#include "SqlConnectionPool.h"
+#include "Timer.h"
 #include "wrap.h"
 
-#define TIMESLOT 15
+#define CONNECT_FD_ET // 通信套接字ET模式
+// #define CONNECT_FD_LT // LT模式
 
-class Utils {
-public:
-    static int *utilsPipefd; // pipefd
-    static int utilsEpollfd; // epollfd
+#define LISTEN_FD_ET // 监听套接字ET模式
+// #define LISTEN_FD_LT // LT模式
 
-public:
-    // 设置文件描述符为非阻塞
-    int setNonBlocking(int fd) {
-        int oldOption = fcntl(fd, F_GETFL);
-        int newOption = oldOption | O_NONBLOCK;
-        fcntl(fd, F_SETFL, newOption);
-        return oldOption;
-    }
-    // 往epoll注册fd读事件，选择开启ET和EPOLLONESHOT事件
-    void addfd(int epollfd, int fd, bool oneShot, bool isET) {
-        epoll_event event;
-        event.data.fd = fd;
-        if (isET) {
-            event.events = EPOLLIN | EPOLLRDHUP | EPOLLET;
-        } else {
-            event.events = EPOLLIN | EPOLLRDHUP;
-        }
-        if (oneShot) {
-            event.events |= EPOLLONESHOT;
-        }
-        epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
-        setNonBlocking(fd);
-    }
-    // 信号处理函数
-    static void sigHandler(int sig) {
-        int tempErrno = errno;
-        send(utilsPipefd[1], (char *)&sig, 1, 0);
-        errno = tempErrno;
-    }
-    // 设置信号处理函数
-    void addSigHandler(int sig, void (*handler)(int), bool restart = true) {
-        struct sigaction sa;
-        memset(&sa, 0, sizeof(sa));
-        sa.sa_handler = handler;
-        if (restart) {
-            sa.sa_flags |= SA_RESTART;
-        }
-        sigfillset(&sa.sa_mask);
-        assert(sigaction(sig, &sa, NULL) != -1);
-    }
-};
-int pipefd[2];
-int *Utils::utilsPipefd = pipefd;
-int Utils::utilsEpollfd = 0;
+#define SYN_LOG // 同步写日志
+// #define ASYN_LOG // 异步写日志
+
+class TimerSortList;
+extern TimerSortList timeSortList;
+const int MAX_FD = 65536;           // 最大文件描述符
+const int MAX_EVENT_NUMBER = 10000; // 最大事件数
+const int TIMESLOT = 5;             // 最小超时单位
+
+extern int pipefd[2];
+extern int epollfd;
+
+// 设置文件描述符为非阻塞
+extern int setNonBlocking(int fd);
+
+// 往内核事件表中注册fd读事件，选择开启ET和EPOLLONESHOT事件
+extern void addfd(int epollfd, int fd, bool oneShot);
+
+// 从内核事件表中删除fd
+extern void removefd(int epollfd, int fd);
+// 将事件重置为EPOLLONESHOT
+extern void modfd(int epollfd, int fd, int events);
+
+// 信号处理函数
+extern void sigHandler(int sig);
+// 设置信号处理函数
+extern void addSigHandler(int sig, void (*handler)(int), bool restart = true);
+
+extern void timerHandler();
+
+struct ClientData;
+extern void callbackFun(ClientData *userData);
 
 #endif

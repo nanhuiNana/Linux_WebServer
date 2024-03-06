@@ -13,24 +13,30 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/epoll.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/uio.h>
 #include <time.h>
 #include <unistd.h>
 
 #include <exception>
 #include <iostream>
 #include <list>
+#include <map>
 #include <queue>
 #include <string>
 using std::cout;
 using std::endl;
 using std::exception;
 using std::list;
+using std::map;
+using std::pair;
 using std::queue;
 using std::string;
 
 // 封装系统异常函数
-void sys_error(const char *str);
+extern void sys_error(const char *str);
 // 信号量初始化
 extern void Sem_init(sem_t *sem, int pshared, unsigned int value);
 // 信号量销毁
