@@ -1,7 +1,7 @@
 #include "../inc/Uilts.h"
 
 int pipefd[2];
-TimerSortList timeSortList;
+TimerSortList timerSortList;
 int epollfd = 0;
 
 // 设置文件描述符为非阻塞
@@ -83,7 +83,7 @@ void addSigHandler(int sig, void (*handler)(int), bool restart) {
 
 // 定时处理函数，内部重置定时时间
 void timerHandler() {
-    timeSortList.tick();
+    timerSortList.tick();
     alarm(TIMESLOT);
 }
 
