@@ -12,14 +12,14 @@
 #define CONNECT_FD_ET // 通信套接字ET模式
 // #define CONNECT_FD_LT // LT模式
 
-#define LISTEN_FD_ET // 监听套接字ET模式
-// #define LISTEN_FD_LT // LT模式
+// #define LISTEN_FD_ET // 监听套接字ET模式
+#define LISTEN_FD_LT // LT模式
 
 #define SYN_LOG // 同步写日志
 // #define ASYN_LOG // 异步写日志
 
 class TimerSortList;
-extern TimerSortList timeSortList;
+extern TimerSortList timerSortList;
 const int MAX_FD = 65536;           // 最大文件描述符
 const int MAX_EVENT_NUMBER = 10000; // 最大事件数
 const int TIMESLOT = 5;             // 最小超时单位
