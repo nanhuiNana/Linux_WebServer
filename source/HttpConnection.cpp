@@ -70,7 +70,7 @@ void HttpConnection::initMysqlUsers(SqlConnectionPool *sqlConnectionPool) {
     while (MYSQL_ROW row = mysql_fetch_row(result)) {
         string username = row[0];
         string password = row[1];
-        cout << username << " " << password << endl;
+        // cout << username << " " << password << endl;
         users[username] = password;
     }
 }
@@ -94,7 +94,7 @@ bool HttpConnection::readOnce() {
         }
         myReadIndex += readBytes; // 更新读缓冲区下标位置
     }
-    printf("%s\n", myReadBuf);
+    // printf("%s\n", myReadBuf);
     return true;
 #endif
 
@@ -378,7 +378,7 @@ HttpConnection::HTTP_CODE HttpConnection::doRequest() {
     } else {
         strncpy(myFileName + len, myUrl, fileNameLen - len - 1);
     }
-    printf("%s\n", myFileName);
+    // printf("%s\n", myFileName);
 
     if (stat(myFileName, &myFileStat) < 0) {
         return NO_RESOURCE;
