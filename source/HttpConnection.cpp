@@ -19,6 +19,10 @@ const char *errorForm404 = "The requested file was not found on this server.\n";
 const char *errorTitle500 = "Internal Error";
 const char *errorForm500 = "There was an unusual problem serving the request file.\n";
 
+struct sockaddr_in *HttpConnection::getAddress() {
+    return &myAddress;
+}
+
 void HttpConnection::init(int socketfd, const struct sockaddr_in &addr) {
     mySocketfd = socketfd;          // 记录通信套接字
     myAddress = addr;               // 记录客户端地址
@@ -66,6 +70,7 @@ void HttpConnection::initMysqlUsers(SqlConnectionPool *sqlConnectionPool) {
     while (MYSQL_ROW row = mysql_fetch_row(result)) {
         string username = row[0];
         string password = row[1];
+        cout << username << " " << password << endl;
         users[username] = password;
     }
 }
@@ -89,6 +94,7 @@ bool HttpConnection::readOnce() {
         }
         myReadIndex += readBytes; // 更新读缓冲区下标位置
     }
+    printf("%s\n", myReadBuf);
     return true;
 #endif
 
@@ -103,14 +109,20 @@ bool HttpConnection::readOnce() {
 }
 
 HttpConnection::LINE_STATE HttpConnection::parseLine() {
+    // printf("parseLine success\n");
     char ch;
     // 查找\r\n字符，如果找到其中一个而找不到另一个就是LINE_BAD无法解析，如果两个都找到就是LINE_OK解析成功，如果都找不到就是LINE_OPEN报文不完整
+    // printf("%d\n", myCheckedIndex);
+    // printf("%d\n", myReadIndex);
     for (; myCheckedIndex < myReadIndex; ++myCheckedIndex) {
         ch = myReadBuf[myCheckedIndex];
+        // printf("%c\n", ch);
         if (ch == '\r') {
+            // printf("find r\n");
             if (myCheckedIndex + 1 == myReadIndex) {
                 return LINE_OPEN;
             } else if (myReadBuf[myCheckedIndex + 1] == '\n') {
+                // printf("ok\n");
                 myReadBuf[myCheckedIndex++] = 0;
                 myReadBuf[myCheckedIndex++] = 0;
                 return LINE_OK;
@@ -124,8 +136,8 @@ HttpConnection::LINE_STATE HttpConnection::parseLine() {
             }
             return LINE_BAD;
         }
-        return LINE_OPEN;
     }
+    return LINE_OPEN;
 }
 
 HttpConnection::HTTP_CODE HttpConnection::parseRequestLine(char *text) {
@@ -137,6 +149,10 @@ HttpConnection::HTTP_CODE HttpConnection::parseRequestLine(char *text) {
     }
     *str++ = 0;
     char *method = text; // 记录请求方法
+
+    LOG_INFO("%s", method);
+    Log::getInstance()->flush();
+
     // 不区分大小写的比较字符串是否相等，判断请求方法是GET还是POST
     if (strcasecmp(method, "GET") == 0) {
         myMethod = GET;
@@ -156,6 +172,10 @@ HttpConnection::HTTP_CODE HttpConnection::parseRequestLine(char *text) {
     *str++ = 0;
     str += strspn(str, " \t");
     myVersion = str; // 记录HTTP版本号
+
+    LOG_INFO("%s", myVersion);
+    Log::getInstance()->flush();
+
     // 判断版本号
     if (strcasecmp(myVersion, "HTTP/1.1") != 0) {
         return BAD_REQUEST;
@@ -177,13 +197,18 @@ HttpConnection::HTTP_CODE HttpConnection::parseRequestLine(char *text) {
     if (strlen(myUrl) == 1) {
         strcat(myUrl, "judge.html");
     }
+
+    LOG_INFO("%s", myUrl);
+    Log::getInstance()->flush();
+
     myCheckState = CHECK_STATE_HEADER;
     return NO_REQUEST;
 }
 
 HttpConnection::HTTP_CODE HttpConnection::parseHeader(char *text) {
     // 判断是空行还是请求头
-    if (text[0] == 0) {                         // 空行
+    if (text[0] == '\0') {
+        // printf("blank line\n");                 // 空行
         if (myContentLength != 0) {             // 判断是否是POST请求
             myCheckState = CHECK_STATE_CONTENT; // POST需要解析请求体
             return NO_REQUEST;
@@ -226,11 +251,13 @@ char *HttpConnection::getLine() {
 }
 
 HttpConnection::HTTP_CODE HttpConnection::processRead() {
+    // printf("processRead success\n");
     LINE_STATE lineState = LINE_OK;
     HTTP_CODE ret = NO_REQUEST;
     char *text = 0;
     // 调用从机读取解析一行，判断是否能进入主机进行解析
-    while ((lineState = parseLine()) == LINE_OK || (myCheckState == CHECK_STATE_CONTENT && lineState == LINE_OK)) {
+    while ((myCheckState == CHECK_STATE_CONTENT && lineState == LINE_OK) || (lineState = parseLine()) == LINE_OK) {
+        // printf("success\n");
         text = getLine();             // 从读缓冲区获取未处理字符首位置
         myStartLine = myCheckedIndex; // 更新已处理字符位置
         LOG_INFO("%s", text);         // 输出日志
@@ -238,23 +265,24 @@ HttpConnection::HTTP_CODE HttpConnection::processRead() {
         switch (myCheckState) {       // 判断主机状态
         case CHECK_STATE_REQUESTLINE: {
             ret = parseRequestLine(text); // 解析请求行
-            if (ret = BAD_REQUEST) {
+            if (ret == BAD_REQUEST) {
                 return BAD_REQUEST;
             }
             break;
         }
         case CHECK_STATE_HEADER: {
             ret = parseHeader(text); // 解析请求头
-            if (ret = BAD_REQUEST) {
+            // printf("ret:%d\n", ret);
+            if (ret == BAD_REQUEST) {
                 return BAD_REQUEST;
-            } else if (ret = GET_REQUEST) {
+            } else if (ret == GET_REQUEST) {
                 return doRequest();
             }
             break;
         }
         case CHECK_STATE_CONTENT: {
             ret = parseContent(text); // 解析请求体
-            if (ret = GET_REQUEST) {
+            if (ret == GET_REQUEST) {
                 return doRequest();
             }
             lineState = LINE_OPEN;
@@ -287,12 +315,10 @@ HttpConnection::HTTP_CODE HttpConnection::doRequest() {
         for (i = 5; myString[i] != '&'; ++i) {
             username += myString[i];
         }
-        username += '\0';
         int j = 0;
         for (i = i + 10; myString[i] != 0; ++i, ++j) {
             password += myString[i];
         }
-        password += '\0';
 
         // 注册校验
         if (*(p + 1) == '3') {
@@ -318,7 +344,7 @@ HttpConnection::HTTP_CODE HttpConnection::doRequest() {
             if (users.find(username) != users.end() && users[username] == password) {
                 strcpy(myUrl, "/welcome.html");
             } else {
-                strcpy(myUrl, "loginError.html");
+                strcpy(myUrl, "/loginError.html");
             }
         }
     }
@@ -352,6 +378,7 @@ HttpConnection::HTTP_CODE HttpConnection::doRequest() {
     } else {
         strncpy(myFileName + len, myUrl, fileNameLen - len - 1);
     }
+    printf("%s\n", myFileName);
 
     if (stat(myFileName, &myFileStat) < 0) {
         return NO_RESOURCE;
@@ -433,6 +460,7 @@ bool HttpConnection::addContent(const char *content) {
 }
 
 bool HttpConnection::processWrite(HTTP_CODE flag) {
+    // printf("process write\n");
     switch (flag) {
     case INTERNAL_ERROR: {
         addStatusLine(500, errorTitle500);
@@ -539,12 +567,15 @@ void HttpConnection::closeConnection(bool realClose) {
 }
 
 void HttpConnection::process() {
+    // printf("process success\n");
     HTTP_CODE readRet = processRead();
     if (readRet == NO_REQUEST) {
         modfd(epollfd, mySocketfd, EPOLLIN);
         return;
     }
+    // printf("%d\n", readRet);
     bool writeRet = processWrite(readRet);
+    // cout << writeRet << endl;
     if (!writeRet) {
         closeConnection();
     }
